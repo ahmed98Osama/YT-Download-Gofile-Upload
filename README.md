@@ -225,13 +225,14 @@ Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` and `CONFIG["video_urls
 
 | Issue | What to do |
 |-------|------------|
-| **"Requested format is not available"** | The notebook uses a format selector with fallbacks (`bv*+ba*/bv+ba/b`) so when YouTube serves only combined streams (e.g. SABR), yt-dlp uses the best single file. If a video still fails, try it alone with `--list-formats` in yt-dlp to see available formats. |
+| **"Requested format is not available"** | The notebook uses a permissive format with fallbacks ending in `/best` so when YouTube serves only combined streams (e.g. SABR or TV/Safari player), yt-dlp takes the best single file. Update yt-dlp (`%pip install -U yt-dlp`) and re-run; if a video still fails, run `yt-dlp -F URL` to see available formats. |
 | **Filename contains "NA" (e.g. `001_title_NA.mp4`)** | When `upload_date` is missing (e.g. some new videos), yt-dlp uses "NA". The notebook’s progress hook renames such files to remove `_NA` (e.g. `001_title.mp4`). |
 | **Cookie file not found / yt-dlp fails on cookies** | Leave `cookie_file_path` as `None` or ensure the path points to an existing file. The script ignores the path if the file doesn’t exist. |
 | **Playlist “succeeds” but some videos missing** | With `ignoreerrors`, failed entries are skipped. The message says “Some playlist entries may have been skipped”; check the folder and yt-dlp output for errors. |
 | **Age-restricted or members-only video** | Use the **Add cookies** cell with a Netscape export from a logged-in browser, then set `CONFIG["cookie_file_path"]` to your cookie file (e.g. `"cookies.txt"`). |
 | **Colab: runtime disconnected** | For long playlists, consider splitting URLs or re-running; Colab may disconnect after long idle time. |
 | **HTTP 403 / 429 or "fragment not found" in full workflow** | YouTube may rate-limit when you run downloads twice in a row. Run only one of Section 2 or Section 3 per session, or wait a few minutes between runs. Section 2 (simple) does not do a separate info-extraction step, so it can be less affected. |
+| **"Could not get Gofile.io server information"** | The notebook tries multiple Gofile API endpoints. If all fail, Gofile may be temporarily down or your network may block the request; try again later or check [gofile.io](https://gofile.io). |
 
 ---
 
