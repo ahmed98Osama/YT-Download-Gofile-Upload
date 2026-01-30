@@ -141,7 +141,7 @@ Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` empty. When you run the
 
 | Issue | What to do |
 |-------|------------|
-| **"Requested format is not available"** | The notebook uses a flexible format and `ignoreerrors`. If one video still fails, try that video alone with `--list-formats` in yt-dlp to see available formats. |
+| **"Requested format is not available"** | The notebook uses a format selector with fallbacks (`bv*+ba*/bv+ba/b`) so when YouTube serves only combined streams (e.g. SABR), yt-dlp uses the best single file. If a video still fails, try it alone with `--list-formats` in yt-dlp to see available formats. |
 | **Cookie file not found / yt-dlp fails on cookies** | Leave `cookie_file_path` as `None` or ensure the path points to an existing file. The script ignores the path if the file doesn’t exist. |
 | **Playlist “succeeds” but some videos missing** | With `ignoreerrors`, failed entries are skipped. The message says “Some playlist entries may have been skipped”; check the folder and yt-dlp output for errors. |
 | **Age-restricted or members-only video** | Use the **Add cookies** cell with a Netscape export from a logged-in browser, then set `CONFIG["cookie_file_path"]` to your cookie file (e.g. `"cookies.txt"`). |
