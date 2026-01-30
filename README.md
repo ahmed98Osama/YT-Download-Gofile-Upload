@@ -81,6 +81,16 @@ Use this if you need a logged-in YouTube session (e.g. age-restricted or members
 
 ---
 
+### URLs file (optional)
+
+Use this to provide URLs from a text file instead of listing them in `CONFIG["video_urls"]`.
+
+1. In the **URLs file** cell, paste one YouTube URL per line between the triple quotes in `URL_CONTENT` (empty lines and lines starting with `#` are skipped).
+2. Run the cell. It writes `urls.txt` and tells you to set `CONFIG["video_urls_file"]` in the full workflow.
+3. In **Section 3**, set `CONFIG["video_urls_file"]` to `"urls.txt"`, or run the full workflow cell after running the URLs file cell — it will use `urls.txt` automatically if the file exists.
+
+---
+
 ### 4. Full workflow: Download → Zip → Upload to Gofile
 
 This section downloads all URLs you give it, zips the results, and uploads the zips to Gofile.
@@ -96,6 +106,7 @@ CONFIG = {
         "https://www.youtube.com/watch?v=...",
         "https://www.youtube.com/playlist?list=...",
     ],
+    "video_urls_file": None,   # Or path to a text file with one URL per line (e.g. "urls.txt"); skip empty and # lines
     "base_save_path": "downloads",
     "cookie_file_path": None,   # or "cookies.txt" if you use the Add cookies cell
     "compression": "individual",  # "single" or "individual"
@@ -103,6 +114,7 @@ CONFIG = {
 ```
 
 - **`video_urls`** — List of video or playlist URLs.
+- **`video_urls_file`** — Path to a text file with one URL per line (e.g. `"urls.txt"`). Empty lines and lines starting with `#` are skipped. If set and the file exists, URLs are loaded from it; otherwise `video_urls` is used.
 - **`base_save_path`** — Folder where downloads and zips go (e.g. `downloads`).
 - **`cookie_file_path`** — Path to your Netscape cookie file, or `None`. Only used if the file exists.
 - **`compression`** — `"single"`: one zip for everything; `"individual"`: one zip per playlist/folder.
@@ -111,7 +123,7 @@ Set `USE_CONFIG = True` and fill `CONFIG`, then run the cell. It will not ask fo
 
 #### Option B: Interactive prompts
 
-Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` empty. When you run the cell it will ask for:
+Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` and `CONFIG["video_urls_file"]` empty/unset. When you run the cell it will ask for:
 
 - URLs (one per line; empty line to finish)
 - Base save path (default: `downloads`)
@@ -131,6 +143,7 @@ Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` empty. When you run the
 | Key | Description | Example |
 |-----|-------------|--------|
 | `video_urls` | List of YouTube video or playlist URLs | `["https://www.youtube.com/playlist?list=..."]` |
+| `video_urls_file` | Path to a text file with one URL per line (empty and `#` lines skipped) | `None` or `"urls.txt"` |
 | `base_save_path` | Directory for downloads and zips | `"downloads"` |
 | `cookie_file_path` | Netscape cookie file path, or `None` | `None` or `"cookies.txt"` |
 | `compression` | `"single"` = one zip; `"individual"` = one zip per folder | `"individual"` |
