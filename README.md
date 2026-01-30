@@ -59,13 +59,13 @@ Do this once per session (and once in Colab when you open the notebook).
 
 ---
 
-### 2. Simple single-video download (and optional Gofile upload)
+### 2. Simple single-video (or playlist) download and optional Gofile upload
 
-- **Purpose:** Download one video in best quality, then optionally upload one file to Gofile via `curl`.
+- **Purpose:** Download one video or a whole playlist in best quality, then optionally upload every downloaded file to Gofile via `curl`.
 - **How:** Run the cell. It will ask for:
-  - YouTube video URL
+  - YouTube video or playlist URL
   - Save folder (default: `downloads`)
-- **Upload:** At the bottom of the same cell there is a commented `curl` command. Uncomment it and set the file path to your downloaded video (e.g. `downloads/Your Video Title.mp4`) to upload that file to Gofile.
+- **Upload:** After download, all finished files are uploaded to Gofile with the video title as the filename (one Gofile file per video).
 
 ---
 
@@ -147,6 +147,7 @@ Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` empty. When you run the
 | **Playlist “succeeds” but some videos missing** | With `ignoreerrors`, failed entries are skipped. The message says “Some playlist entries may have been skipped”; check the folder and yt-dlp output for errors. |
 | **Age-restricted or members-only video** | Use the **Add cookies** cell with a Netscape export from a logged-in browser, then set `CONFIG["cookie_file_path"]` to your cookie file (e.g. `"cookies.txt"`). |
 | **Colab: runtime disconnected** | For long playlists, consider splitting URLs or re-running; Colab may disconnect after long idle time. |
+| **HTTP 403 / 429 or "fragment not found" in full workflow** | YouTube may rate-limit when you run downloads twice in a row. Run only one of Section 2 or Section 3 per session, or wait a few minutes between runs. Section 2 (simple) does not do a separate info-extraction step, so it can be less affected. |
 
 ---
 
