@@ -225,7 +225,7 @@ Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` and `CONFIG["video_urls
 
 | Issue | What to do |
 |-------|------------|
-| **"Requested format is not available"** | The notebook uses a permissive format with fallbacks ending in `/best` so when YouTube serves only combined streams (e.g. SABR or TV/Safari player), yt-dlp takes the best single file. Update yt-dlp (`%pip install -U yt-dlp`) and re-run; if a video still fails, run `yt-dlp -F URL` to see available formats. |
+| **"Requested format is not available"** | The notebook uses a permissive format with fallbacks ending in `/best` and requests multiple YouTube player clients (`web`, `mweb`, `android`, `tv_embedded`, `tv`) so more formats are available. Update yt-dlp (`%pip install -U yt-dlp`) and re-run; if a video still fails, run `yt-dlp -F URL` to see available formats. |
 | **Filename contains "NA" (e.g. `001_title_NA.mp4`)** | When `upload_date` is missing (e.g. some new videos), yt-dlp uses "NA". The notebook’s progress hook renames such files to remove `_NA` (e.g. `001_title.mp4`). |
 | **Cookie file not found / yt-dlp fails on cookies** | Leave `cookie_file_path` as `None` or ensure the path points to an existing file. The script ignores the path if the file doesn’t exist. |
 | **Playlist “succeeds” but some videos missing** | With `ignoreerrors`, failed entries are skipped. The message says “Some playlist entries may have been skipped”; check the folder and yt-dlp output for errors. |
