@@ -247,7 +247,7 @@ YT-Download-Gofile-Upload/
 └── urls.txt                                     # Optional; created by URLs file cell
 ```
 
-Downloaded files use names like `001_Title_YYYYMMDD.mp4` (number, title, upload date). The notebook uses `playlist_reverse` so the oldest video is 001 and the newest gets the last number. Zips and Gofile uploads follow the folder/playlist names.
+Downloaded files use names like `001_Title_YYYYMMDD.mp4` (number, title, upload date). The notebook uses `playlist_reverse` so numbering is by upload date: **oldest video = 001**, newest = last number (YouTube often returns playlists newest-first). Zips and Gofile uploads follow the folder/playlist names.
 
 ---
 
