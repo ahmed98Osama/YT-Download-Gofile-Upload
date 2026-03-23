@@ -13,9 +13,10 @@ Download YouTube videos or playlists with [yt-dlp](https://github.com/yt-dlp/yt-
 
 | Step | Description |
 |------|-------------|
-| **Download** | Fetch videos or full playlists in best available quality (video+audio merged to MP4). |
-| **Zip** | Compress into one archive or one zip per playlist/folder. |
-| **Upload** | Send zips to Gofile.io and get shareable download links. |
+| **Download** | Fetch videos or full playlists in chosen quality (video+audio merged to MP4). Skips files that already exist (`nooverwrites` and optional download archive). |
+| **Chunked zip + upload** | **Small** playlists (≤ `chunk_size`, default 100 entries) are merged into one zip until the combined count would exceed `chunk_size`, then upload. **Large** playlists are downloaded in slices of up to `chunk_size` entries; each slice is zipped and uploaded separately (e.g. 450 videos → 5 Gofile links). |
+| **Channel “Playlists” URLs** | A URL like `https://www.youtube.com/@ChannelName/playlists` is expanded into individual playlist URLs before downloading. |
+| **CSV log** | After each successful Gofile upload, a row is appended to a UTF-8 CSV (default: `/content/drive/MyDrive/yt_gofile_upload_log.csv` in Colab). Mount Google Drive using the optional cell in Section 3. |
 
 Optional **cookies** support lets you use a logged-in session (e.g. for age-restricted or region-locked content). Optional **URLs file** lets you paste URLs (one per line) into a cell and have the full workflow read them from a file.
 
@@ -48,8 +49,8 @@ Follow this if you want to run everything in the browser with no setup.
 3. **Choose your workflow**
    - **Option A — One video or one playlist, then upload each file to Gofile:**  
      Scroll to **Section 2**. Run the code cell. When prompted, paste a YouTube video or playlist URL and press Enter. Use the default save path (just press Enter) or type a folder name. After the download finishes, each file is uploaded to Gofile and you get a link per video.
-   - **Option B — Multiple URLs or playlists, zip them, then upload zips to Gofile:**  
-     Scroll to **Section 3 (Full workflow)**. Optionally run the **Add cookies** and **URLs file** cells (see below), then run the **Run the workflow** code cell. You can fill `CONFIG` in that cell (URLs, paths, cookies) or leave it empty and answer the prompts. At the end you get Gofile links for the zip(s).
+   - **Option B — Multiple URLs or playlists, chunked zips, Gofile links:**  
+     Scroll to **Section 3 (Full workflow)**. Optionally run **Add cookies**, **URLs file**, and **Google Drive (optional)** to mount Drive for CSV logging. Run the **Run the workflow** code cell. You can fill `CONFIG` (URLs, `chunk_size`, `gofile_log_csv`, `skip_existing_downloads`, etc.) or use interactive prompts. You get Gofile links per merged batch or per slice for large playlists; the CSV log records each upload when Drive is mounted.
 
 4. **Optional: cookies (for age-restricted or members-only videos)**
    - If you see "Sign in to confirm your age" or "Video unavailable" for some videos, use the **Add cookies (optional)** cell inside Section 3. See [Add cookies (optional)](#3-add-cookies-optional) below for the full steps (export from browser, paste, run cell, set `CONFIG["cookie_file_path"]`).
@@ -180,7 +181,11 @@ CONFIG = {
     "video_urls_file": None,   # Or path to a text file with one URL per line (e.g. "urls.txt"); skip empty and # lines
     "base_save_path": "downloads",
     "cookie_file_path": None,   # or "cookies.txt" if you use the Add cookies cell
-    "compression": "individual",  # "single" or "individual"
+    "chunk_size": 100,  # merge small playlists until sum would exceed this; split large playlists into slices of this size
+    "gofile_log_csv": "/content/drive/MyDrive/yt_gofile_upload_log.csv",  # append CSV after each upload
+    "skip_existing_downloads": True,  # yt-dlp nooverwrites
+    "use_download_archive": True,     # record ids in base_save_path/yt_dlp_archive.txt
+    "compression": "individual",  # legacy; chunked workflow builds its own zips
 }
 ```
 
@@ -188,7 +193,11 @@ CONFIG = {
 - **`video_urls_file`** — Path to a text file with one URL per line (e.g. `"urls.txt"`). Empty lines and lines starting with `#` are skipped. If set and the file exists, URLs are loaded from it; otherwise `video_urls` is used.
 - **`base_save_path`** — Folder where downloads and zips go (e.g. `downloads`).
 - **`cookie_file_path`** — Path to your Netscape cookie file, or `None`. Used only if the file exists and is non-empty; otherwise the workflow skips cookies and prints a message.
-- **`compression`** — `"single"`: one zip for everything; `"individual"`: one zip per playlist/folder.
+- **`chunk_size`** — Default `100`. Small playlists are merged into one upload until adding the next would exceed this count. Playlists with more than `chunk_size` entries are downloaded in slices and produce one Gofile upload per slice.
+- **`gofile_log_csv`** — Path to append CSV rows (timestamp, description, link, paths, slice range). Default targets Colab Drive; mount Drive first or set a local path.
+- **`skip_existing_downloads`** — If `True`, sets yt-dlp `nooverwrites` so existing files are not re-downloaded.
+- **`use_download_archive`** — If `True`, passes a download archive file under `base_save_path` so already completed video IDs are skipped even when filenames differ.
+- **`compression`** — Legacy; the chunked workflow creates its own zip files.
 
 Set `USE_CONFIG = True` and fill `CONFIG`, then run the cell. It will not ask for URLs or paths.
 
@@ -199,13 +208,14 @@ Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` and `CONFIG["video_urls
 - URLs (one per line; empty line to finish)
 - Base save path (default: `downloads`)
 - Cookie file path (optional; Enter to skip)
-- Compression: `single` or `individual`
+
+It then runs the same chunked workflow as `USE_CONFIG = True`, using `CONFIG` defaults for `chunk_size`, `gofile_log_csv`, and skip/archive options (adjust those keys in `CONFIG` before running).
 
 #### What the full workflow does
 
-1. **Download** — For each URL, gets metadata, creates a subfolder (playlist or video name), and downloads with yt-dlp (best video+audio, merged to MP4). Uses `ignoreerrors` so one bad video doesn’t stop a whole playlist.
-2. **Zip** — Builds zip(s) under `base_save_path` (one zip or one per subfolder, depending on `compression`).
-3. **Upload** — Uploads each zip to Gofile.io and prints the download links.
+1. **Expand URLs** — Channel `.../playlists` tab URLs are expanded into individual playlist URLs (flat extraction).
+2. **Download** — For each URL, entry count is estimated. **Small** playlists (`N ≤ chunk_size`) are merged into upload batches when `pool_count + N ≤ chunk_size`; otherwise the pool is flushed first. **Large** playlists flush the pool, then download each slice into `playlist_title/__slice_XX/` (each slice uploads separately). Uses `ignoreerrors` so one bad video doesn’t stop a whole playlist. Skips existing files when configured.
+3. **Zip + upload** — Builds zip(s) under `base_save_path` (merged batch zips or per-slice zips), uploads each to Gofile.io, prints links, and appends to the CSV when the log path is writable.
 
 ---
 
@@ -217,7 +227,12 @@ Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` and `CONFIG["video_urls
 | `video_urls_file` | Path to a text file with one URL per line (empty and `#` lines skipped) | `None` or `"urls.txt"` |
 | `base_save_path` | Directory for downloads and zips | `"downloads"` |
 | `cookie_file_path` | Netscape cookie file path, or `None` | `None` or `"cookies.txt"` |
-| `compression` | `"single"` = one zip; `"individual"` = one zip per folder | `"individual"` |
+| `chunk_size` | Merge small playlists up to this total; split larger playlists into slices | `100` |
+| `gofile_log_csv` | Append CSV log after each successful upload | `/content/drive/MyDrive/yt_gofile_upload_log.csv` |
+| `skip_existing_downloads` | Pass `nooverwrites` to yt-dlp | `true` |
+| `use_download_archive` | Use `yt_dlp_archive.txt` under `base_save_path` | `true` |
+| `download_archive_path` | Override archive file path | `null` (default) |
+| `compression` | Legacy (chunked workflow builds its own zips) | `"individual"` |
 
 ---
 
