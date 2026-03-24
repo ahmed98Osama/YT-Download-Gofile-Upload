@@ -184,7 +184,9 @@ CONFIG = {
     "chunk_size": 100,  # merge small playlists until sum would exceed this; split large playlists into slices of this size
     "gofile_log_csv": "/content/drive/MyDrive/yt_gofile_upload_log.csv",  # append CSV after each upload
     "skip_existing_downloads": True,  # yt-dlp nooverwrites
-    "use_download_archive": True,     # record ids in base_save_path/yt_dlp_archive.txt
+    "use_download_archive": True,
+    "download_archive_path": "/content/drive/MyDrive/yt_dlp_download_archive.txt",  # yt-dlp resume file (persist on Drive)
+    "download_manifest_csv": "/content/drive/MyDrive/yt_download_manifest.csv",   # per-video finished/error log; "" to disable
     "compression": "individual",  # legacy; chunked workflow builds its own zips
 }
 ```
@@ -196,7 +198,9 @@ CONFIG = {
 - **`chunk_size`** — Default `100`. Small playlists are merged into one upload until adding the next would exceed this count. Playlists with more than `chunk_size` entries are downloaded in slices and produce one Gofile upload per slice.
 - **`gofile_log_csv`** — Path to append CSV rows (timestamp, description, link, paths, slice range). Default targets Colab Drive; mount Drive first or set a local path.
 - **`skip_existing_downloads`** — If `True`, sets yt-dlp `nooverwrites` so existing files are not re-downloaded.
-- **`use_download_archive`** — If `True`, passes a download archive file under `base_save_path` so already completed video IDs are skipped even when filenames differ.
+- **`use_download_archive`** — If `True`, passes yt-dlp’s **`download_archive`** file so completed video IDs are skipped on re-run (resume).
+- **`download_archive_path`** — Path to that archive file. Default in the notebook targets **Google Drive** so resume survives Colab restarts. If unset while `use_download_archive` is True, the notebook falls back to a Drive path or you can set a local path.
+- **`download_manifest_csv`** — Optional CSV appended with **finished** / **error** rows per video (for auditing). Set to `""` to disable.
 - **`compression`** — Legacy; the chunked workflow creates its own zip files.
 
 Set `USE_CONFIG = True` and fill `CONFIG`, then run the cell. It will not ask for URLs or paths.
@@ -209,7 +213,7 @@ Set `USE_CONFIG = False` or leave `CONFIG["video_urls"]` and `CONFIG["video_urls
 - Base save path (default: `downloads`)
 - Cookie file path (optional; Enter to skip)
 
-It then runs the same chunked workflow as `USE_CONFIG = True`, using `CONFIG` defaults for `chunk_size`, `gofile_log_csv`, and skip/archive options (adjust those keys in `CONFIG` before running).
+It then runs the same chunked workflow as `USE_CONFIG = True`, using `CONFIG` defaults for `chunk_size`, `gofile_log_csv`, `download_archive_path`, `download_manifest_csv`, and skip options (adjust those keys in `CONFIG` before running).
 
 #### What the full workflow does
 
@@ -230,9 +234,20 @@ It then runs the same chunked workflow as `USE_CONFIG = True`, using `CONFIG` de
 | `chunk_size` | Merge small playlists up to this total; split larger playlists into slices | `100` |
 | `gofile_log_csv` | Append CSV log after each successful upload | `/content/drive/MyDrive/yt_gofile_upload_log.csv` |
 | `skip_existing_downloads` | Pass `nooverwrites` to yt-dlp | `true` |
-| `use_download_archive` | Use `yt_dlp_archive.txt` under `base_save_path` | `true` |
-| `download_archive_path` | Override archive file path | `null` (default) |
+| `use_download_archive` | Pass yt-dlp download archive for ID-based skip / resume | `true` |
+| `download_archive_path` | Archive file path (default: Drive path in notebook) | `/content/drive/MyDrive/yt_dlp_download_archive.txt` |
+| `download_manifest_csv` | Per-video download log CSV on Drive; `""` disables | `/content/drive/MyDrive/yt_download_manifest.csv` |
 | `compression` | Legacy (chunked workflow builds its own zips) | `"individual"` |
+
+---
+
+## Resume after disconnect (Colab)
+
+1. **Mount Google Drive** using the Section 3 cell so paths under `/content/drive/MyDrive/` work.
+2. Keep **`download_archive_path`** stable (same file every session). yt-dlp **appends** one line per completed video (`youtube VIDEO_ID`); re-running the same playlist skips those IDs.
+3. **`download_manifest_csv`** (optional) records **finished** and **error** rows for human-readable history; it does not replace the archive for resume logic.
+4. **`preview_pending_downloads()`** — Use the optional notebook cell at the bottom: set `PLAYLIST_URL` and run to see **total / in archive / pending** counts and sample pending IDs.
+5. Re-run the **same URLs** and **same CONFIG paths**; completed videos are skipped automatically.
 
 ---
 
