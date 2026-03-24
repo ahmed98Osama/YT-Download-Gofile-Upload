@@ -262,7 +262,11 @@ YT-Download-Gofile-Upload/
 └── urls.txt                                     # Optional; created by URLs file cell
 ```
 
-Downloaded files use names like `001_Title_YYYYMMDD.mp4` (number, title, upload date). The notebook can set **`playlist_auto_oldest_first: True`** (default) to detect whether YouTube lists the playlist **newest-first** or **oldest-first**, then pick `playlist_reverse` so **oldest upload date = 001**. (If you prefer manual control, set `playlist_auto_oldest_first: False` and tune `playlist_reverse` yourself.) Zips and Gofile uploads follow the folder/playlist names.
+Downloaded files use names like `001_Title_YYYYMMDD.mp4` (number, title, upload date). The notebook can set **`playlist_auto_oldest_first: True`** (default) to detect whether YouTube lists the playlist **newest-first** or **oldest-first**, then pick `playlist_reverse` so **oldest upload date = 001**. (If you prefer manual control, set `playlist_auto_oldest_first: False` and tune `playlist_reverse` yourself.)
+
+**Chunked large playlists:** yt-dlp applies **playlist range before** `playlist_reverse`. The workflow maps each “chronological” slice (001 = first published in the whole playlist) to the correct **playliststart/end** for your feed direction, and sets **`autonumber_start`** so filenames stay globally ordered (001–100, 101–200, …) across slices.
+
+Zips and Gofile uploads follow the folder/playlist names.
 
 ---
 
