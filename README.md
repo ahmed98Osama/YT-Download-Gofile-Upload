@@ -187,6 +187,7 @@ CONFIG = {
     "use_download_archive": True,
     "download_archive_path": "/content/drive/MyDrive/yt_dlp_download_archive.txt",  # yt-dlp resume file (persist on Drive)
     "download_manifest_csv": "/content/drive/MyDrive/yt_download_manifest.csv",   # per-video finished/error log; "" to disable
+    "stop_after_consecutive_failed_playlists": 5,  # 0 = off; stop run after N playlists in a row with no new files (fully archive-skipped doesn't count)
     "compression": "individual",  # legacy; chunked workflow builds its own zips
 }
 ```
@@ -201,6 +202,7 @@ CONFIG = {
 - **`use_download_archive`** — If `True`, passes yt-dlp’s **`download_archive`** file so completed video IDs are skipped on re-run (resume).
 - **`download_archive_path`** — Path to that archive file. Default in the notebook targets **Google Drive** so resume survives Colab restarts. If unset while `use_download_archive` is True, the notebook falls back to a Drive path or you can set a local path.
 - **`download_manifest_csv`** — Optional CSV appended with **finished** / **error** rows per video (for auditing). Set to `""` to disable.
+- **`stop_after_consecutive_failed_playlists`** — If `> 0`, stops the whole run after that many **playlists in a row** produce **no new files** (e.g. YouTube bot / “no formats” on every video). Playlists where **every** listed video id is already in `download_archive` are treated as success and **reset** the counter. Set to `0` to disable.
 - **`compression`** — Legacy; the chunked workflow creates its own zip files.
 
 Set `USE_CONFIG = True` and fill `CONFIG`, then run the cell. It will not ask for URLs or paths.
@@ -218,7 +220,7 @@ It then runs the same chunked workflow as `USE_CONFIG = True`, using `CONFIG` de
 #### What the full workflow does
 
 1. **Expand URLs** — Channel `.../playlists` tab URLs are expanded into individual playlist URLs (flat extraction).
-2. **Download** — For each URL, entry count is estimated. **Small** playlists (`N ≤ chunk_size`) are merged into upload batches when `pool_count + N ≤ chunk_size`; otherwise the pool is flushed first. **Large** playlists flush the pool, then download each slice into `playlist_title/__slice_XX/` (each slice uploads separately). Uses `ignoreerrors` so one bad video doesn’t stop a whole playlist. Skips existing files when configured.
+2. **Download** — For each URL, entry count is estimated. **Small** playlists (`N ≤ chunk_size`) are merged into upload batches when `pool_count + N ≤ chunk_size`; otherwise the pool is flushed first. **Large** playlists flush the pool, then download each slice into `playlist_title/__slice_XX/` (each slice uploads separately). Uses `ignoreerrors` so one bad video doesn’t stop a whole playlist. Skips existing files when configured. If **`stop_after_consecutive_failed_playlists`** is set, the run **stops early** after that many consecutive playlists with no new downloads (after flushing any pending merge pool).
 3. **Zip + upload** — Builds zip(s) under `base_save_path` (merged batch zips or per-slice zips), uploads each to Gofile.io, prints links, and appends to the CSV when the log path is writable.
 
 ---
@@ -237,6 +239,7 @@ It then runs the same chunked workflow as `USE_CONFIG = True`, using `CONFIG` de
 | `use_download_archive` | Pass yt-dlp download archive for ID-based skip / resume | `true` |
 | `download_archive_path` | Archive file path (default: Drive path in notebook) | `/content/drive/MyDrive/yt_dlp_download_archive.txt` |
 | `download_manifest_csv` | Per-video download log CSV on Drive; `""` disables | `/content/drive/MyDrive/yt_download_manifest.csv` |
+| `stop_after_consecutive_failed_playlists` | Stop run after N consecutive playlists with no new files; `0` disables | `5` |
 | `compression` | Legacy (chunked workflow builds its own zips) | `"individual"` |
 
 ---
@@ -263,6 +266,7 @@ It then runs the same chunked workflow as `USE_CONFIG = True`, using `CONFIG` de
 | **Age-restricted or members-only video** | Use the **Add cookies** cell with a Netscape export from a logged-in browser, then set `CONFIG["cookie_file_path"]` to your cookie file (e.g. `"cookies.txt"`). |
 | **Colab: runtime disconnected** | For long playlists, consider splitting URLs or re-running; Colab may disconnect after long idle time. |
 | **HTTP 403 / 429 or "fragment not found" in full workflow** | YouTube may rate-limit when you run downloads twice in a row. Run only one of Section 2 or Section 3 per session, or wait a few minutes between runs. Section 2 (simple) does not do a separate info-extraction step, so it can be less affected. |
+| **Many playlists in a row: “Sign in to confirm you’re not a bot” / no formats** | Export **fresh** cookies from the browser, update `cookie_file_path`, wait, or try another network. The notebook can **stop automatically** after `stop_after_consecutive_failed_playlists` empty playlists (set `0` to disable). |
 | **"Could not get Gofile.io server information"** | The notebook tries multiple Gofile API endpoints, then falls back to a fixed upload URL. If upload still fails, Gofile may be down or your network may block it; try again later or check [gofile.io](https://gofile.io). |
 
 ---
